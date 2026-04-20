@@ -87,4 +87,5 @@ export interface ReportData {
   paymentMethods: { method: string; total: number }[];
   cancellations: number;
   lowStock: { name: string; stock: number; min: number }[];
+  ordersByType?: Record<string, number>;
 }

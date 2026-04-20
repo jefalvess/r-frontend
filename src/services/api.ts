@@ -627,51 +627,97 @@ export const ordersApi = {
 // Reports API
 export const reportsApi = {
   getReport: async (startDate: string, endDate: string): Promise<ReportData> => {
-    await delay();
+    const query = new URLSearchParams({
+      start: new Date(`${startDate}T00:00:00.000Z`).toISOString(),
+      end: new Date(`${endDate}T23:59:59.999Z`).toISOString(),
+    }).toString();
 
-    const orders = mockOrders.filter((o) => o.paid);
-    const totalSales = orders.reduce((sum, o) => sum + o.total, 0);
-    const totalOrders = orders.length;
-    const averageTicket = totalOrders > 0 ? totalSales / totalOrders : 0;
+    const [salesResponse, topProductsResponse, paymentsResponse, lowStockResponse, byTypeResponse] =
+      await Promise.all([
+        fetch(`${API_BASE_URL}/reports/sales?${query}`, {
+          method: 'GET',
+          headers: buildApiHeaders(),
+        }),
+        fetch(`${API_BASE_URL}/reports/top-products?${query}`, {
+          method: 'GET',
+          headers: buildApiHeaders(),
+        }),
+        fetch(`${API_BASE_URL}/reports/payments?${query}`, {
+          method: 'GET',
+          headers: buildApiHeaders(),
+        }),
+        fetch(`${API_BASE_URL}/reports/low-stock`, {
+          method: 'GET',
+          headers: buildApiHeaders(),
+        }),
+        fetch(`${API_BASE_URL}/reports/orders-by-type?${query}`, {
+          method: 'GET',
+          headers: buildApiHeaders(),
+        }),
+      ]);
 
-    const productStats: Record<string, { quantity: number; revenue: number }> = {};
-    orders.forEach((order) => {
-      order.items.forEach((item) => {
-        if (!productStats[item.productName]) {
-          productStats[item.productName] = { quantity: 0, revenue: 0 };
-        }
-        productStats[item.productName].quantity += item.quantity;
-        productStats[item.productName].revenue += item.total;
-      });
-    });
+    if (!salesResponse.ok) throw new Error('Erro ao buscar relatório de vendas');
+    if (!topProductsResponse.ok) throw new Error('Erro ao buscar top produtos');
+    if (!paymentsResponse.ok) throw new Error('Erro ao buscar relatório de pagamentos');
+    if (!lowStockResponse.ok) throw new Error('Erro ao buscar relatório de estoque baixo');
+    if (!byTypeResponse.ok) throw new Error('Erro ao buscar relatório por tipo');
 
-    const topProducts = Object.entries(productStats)
-      .map(([name, stats]) => ({ name, ...stats }))
-      .sort((a, b) => b.revenue - a.revenue)
-      .slice(0, 10);
+    const salesData = (await salesResponse.json()) as {
+      totalOrders: number;
+      revenue: number;
+      ticketAverage: number;
+      cancelled: number;
+    };
 
-    const paymentStats: Record<string, number> = {};
-    orders.forEach((order) => {
-      if (order.paymentMethod) {
-        paymentStats[order.paymentMethod] = (paymentStats[order.paymentMethod] || 0) + order.total;
-      }
-    });
+    const topProductsData = (await topProductsResponse.json()) as Array<{
+      productName: string;
+      quantity: number;
+      total: number;
+    }>;
 
-    const paymentMethods = Object.entries(paymentStats).map(([method, total]) => ({
-      method,
-      total,
-    }));
+    const paymentsData = (await paymentsResponse.json()) as {
+      summary: {
+        dinheiro: number;
+        pix: number;
+        cartao: number;
+        misto: number;
+      };
+    };
 
-    const cancellations = mockOrders.filter((o) => o.status === 'cancelado').length;
+    const lowStockData = (await lowStockResponse.json()) as Array<{
+      name: string;
+      currentStock?: number;
+      minStock?: number;
+      stock?: number;
+      min?: number;
+    }>;
+
+    const byTypeData = (await byTypeResponse.json()) as Record<string, number>;
+
+    const paymentMethods = Object.entries(paymentsData.summary)
+      .map(([method, total]) => ({
+        method,
+        total: Number(total ?? 0),
+      }))
+      .filter((item) => item.total > 0);
 
     return {
-      totalSales,
-      totalOrders,
-      averageTicket,
-      topProducts,
+      totalSales: Number(salesData.revenue ?? 0),
+      totalOrders: Number(salesData.totalOrders ?? 0),
+      averageTicket: Number(salesData.ticketAverage ?? 0),
+      topProducts: topProductsData.map((item) => ({
+        name: item.productName,
+        quantity: Number(item.quantity ?? 0),
+        revenue: Number(item.total ?? 0),
+      })),
       paymentMethods,
-      cancellations,
-      lowStock: [],
+      cancellations: Number(salesData.cancelled ?? 0),
+      lowStock: lowStockData.map((item) => ({
+        name: item.name,
+        stock: Number(item.currentStock ?? item.stock ?? 0),
+        min: Number(item.minStock ?? item.min ?? 0),
+      })),
+      ordersByType: byTypeData,
     };
   },
 };
