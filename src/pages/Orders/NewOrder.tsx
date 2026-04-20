@@ -63,12 +63,25 @@ export function NewOrder() {
           throw new Error('Falha ao capturar áudio');
         }
 
-        // Enviar para OpenAI
+        // Enviar para o backend processar o audio com IA
         const result = await audioProcessingApi.processAudio(audioBlob);
 
-        // Fazer match dos produtos e atualizar items
+        // Aproveitar productId do backend quando existir, com fallback local por nome
         const matchedItems = result.items.map((item) => {
-          // Buscar produto por nome (case-insensitive, com busca fuzzy)
+          const matchedById = item.productId
+            ? products.find((product) => product._id === item.productId)
+            : null;
+
+          if (matchedById) {
+            return {
+              ...item,
+              productId: matchedById._id,
+              productName: matchedById.name,
+              unitPrice: matchedById.price,
+              total: item.quantity * matchedById.price,
+            };
+          }
+
           const matchedProduct = products.find(
             (p) =>
               p.name.toLowerCase().includes(item.productName.toLowerCase()) ||
