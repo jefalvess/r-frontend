@@ -632,7 +632,7 @@ export const reportsApi = {
       end: new Date(`${endDate}T23:59:59.999Z`).toISOString(),
     }).toString();
 
-    const [salesResponse, topProductsResponse, paymentsResponse, lowStockResponse, byTypeResponse] =
+    const [salesResponse, topProductsResponse, paymentsResponse, byTypeResponse] =
       await Promise.all([
         fetch(`${API_BASE_URL}/reports/sales?${query}`, {
           method: 'GET',
@@ -655,7 +655,6 @@ export const reportsApi = {
     if (!salesResponse.ok) throw new Error('Erro ao buscar relatório de vendas');
     if (!topProductsResponse.ok) throw new Error('Erro ao buscar top produtos');
     if (!paymentsResponse.ok) throw new Error('Erro ao buscar relatório de pagamentos');
-    if (!lowStockResponse.ok) throw new Error('Erro ao buscar relatório de estoque baixo');
     if (!byTypeResponse.ok) throw new Error('Erro ao buscar relatório por tipo');
 
     const salesData = (await salesResponse.json()) as {
@@ -680,14 +679,6 @@ export const reportsApi = {
       };
     };
 
-    const lowStockData = (await lowStockResponse.json()) as Array<{
-      name: string;
-      currentStock?: number;
-      minStock?: number;
-      stock?: number;
-      min?: number;
-    }>;
-
     const byTypeData = (await byTypeResponse.json()) as Record<string, number>;
 
     const paymentMethods = Object.entries(paymentsData.summary)
@@ -708,11 +699,6 @@ export const reportsApi = {
       })),
       paymentMethods,
       cancellations: Number(salesData.cancelled ?? 0),
-      lowStock: lowStockData.map((item) => ({
-        name: item.name,
-        stock: Number(item.currentStock ?? item.stock ?? 0),
-        min: Number(item.minStock ?? item.min ?? 0),
-      })),
       ordersByType: byTypeData,
     };
   },
