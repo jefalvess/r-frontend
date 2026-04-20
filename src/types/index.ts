@@ -3,20 +3,20 @@ export type OrderStatus = 'aberto' | 'pago' | 'cancelado';
 export type PaymentMethod = 'dinheiro' | 'pix' | 'cartao' | 'misto';
 
 export interface User {
-  id: string;
+  _id: string;
   userName: string;
   name: string;
   role: string;
 }
 
 export interface Category {
-  id: string;
+  _id: string;
   name: string;
   active: boolean;
 }
 
 export interface Ingredient {
-  id: string;
+  _id: string;
   name: string;
   unit: string;
   cost: number;
@@ -28,7 +28,7 @@ export interface RecipeItem {
 }
 
 export interface Product {
-  id: string;
+  _id: string;
   name: string;
   categoryId: string;
   price: number;
@@ -38,7 +38,7 @@ export interface Product {
 }
 
 export interface OrderItem {
-  id: string;
+  _id: string;
   productId: string;
   productName: string;
   quantity: number;
@@ -49,7 +49,8 @@ export interface OrderItem {
 }
 
 export interface Order {
-  id: string;
+  _id: string;
+  publicId?: string;
   number: number;
   type: OrderType;
   status: OrderStatus;

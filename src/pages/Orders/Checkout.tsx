@@ -11,7 +11,7 @@ const paymentMethods = [
 ];
 
 export function Checkout() {
-  const { id } = useParams();
+  const { _id } = useParams();
   const navigate = useNavigate();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
@@ -21,12 +21,12 @@ export function Checkout() {
 
   useEffect(() => {
     loadOrder();
-  }, [id]);
+  }, [_id]);
 
   const loadOrder = async () => {
     setLoading(true);
     try {
-      const data = await ordersApi.getById(id!);
+      const data = await ordersApi.getById(_id!);
       setOrder(data);
     } catch (error) {
       alert('Erro ao carregar pedido');
@@ -42,8 +42,8 @@ export function Checkout() {
 
     setProcessing(true);
     try {
-      await ordersApi.checkout(order.id, paymentMethod, discount);
-      navigate(`/pedidos/${order.id}/confirmacao`);
+      await ordersApi.checkout(order._id, paymentMethod, discount);
+      navigate(`/pedidos/${order._id}/confirmacao`);
     } catch (error) {
       alert('Erro ao finalizar pagamento');
     } finally {
@@ -72,14 +72,14 @@ export function Checkout() {
       {/* Header */}
       <div className="mb-6">
         <button
-          onClick={() => navigate(`/pedidos/${order.id}`)}
+          onClick={() => navigate(`/pedidos/${order._id}`)}
           className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
         >
           <ArrowLeft size={20} />
           <span>Voltar para pedido</span>
         </button>
         <h1 className="text-2xl lg:text-3xl font-semibold mb-2">Fechar Conta</h1>
-        <p className="text-gray-600">Pedido #{order.number} - {order.customerName}</p>
+        <p className="text-gray-600">Pedido #{order.publicId ?? order.number} - {order.customerName}</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -88,7 +88,7 @@ export function Checkout() {
           <h2 className="font-semibold text-lg mb-4">Resumo do Pedido</h2>
           <div className="space-y-3 mb-4">
             {order.items.map((item) => (
-              <div key={item.id} className="flex justify-between text-sm">
+              <div key={item._id} className="flex justify-between text-sm">
                 <span className="text-gray-600">
                   {item.quantity}x {item.productName}
                 </span>

@@ -46,7 +46,7 @@ export function PrintTicket({ order, type, itemsToPrint }: PrintTicketProps) {
       <div className="mb-4">
         <h2 className="font-bold mb-3">ITENS:</h2>
         {itemsToDisplay.map((item) => (
-          <div key={item.id} className="mb-3">
+          <div key={item._id} className="mb-3">
             <div className="flex justify-between">
               <span>
                 {item.quantity}x {item.productName}

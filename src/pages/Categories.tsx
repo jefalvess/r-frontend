@@ -28,7 +28,7 @@ export function Categories() {
     e.preventDefault();
     try {
       if (editingCategory) {
-        await categoriesApi.update(editingCategory.id, formData);
+        await categoriesApi.update(editingCategory._id, formData);
       } else {
         await categoriesApi.create(formData);
       }
@@ -45,10 +45,10 @@ export function Categories() {
     setShowModal(true);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (_id: string) => {
     if (!confirm('Deseja realmente excluir esta categoria?')) return;
     try {
-      await categoriesApi.delete(id);
+      await categoriesApi.delete(_id);
       await loadCategories();
     } catch (error) {
       alert('Erro ao excluir categoria');
@@ -94,7 +94,7 @@ export function Categories() {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {categories.map((category) => (
-                <tr key={category.id} className="hover:bg-gray-50">
+                <tr key={category._id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 font-medium">{category.name}</td>
                   <td className="px-6 py-4">
                     <span
@@ -116,7 +116,7 @@ export function Categories() {
                         <Edit size={18} />
                       </button>
                       <button
-                        onClick={() => handleDelete(category.id)}
+                        onClick={() => handleDelete(category._id)}
                         className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
                       >
                         <Trash2 size={18} />

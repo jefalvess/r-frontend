@@ -12,7 +12,7 @@ import { PrintTicket } from '../../components/PrintTicket';
 import type { Order, Product, Category, OrderItem, PaymentMethod } from '../../types';
 
 export function OrderDetail() {
-  const { id } = useParams();
+  const { _id } = useParams();
   const navigate = useNavigate();
   const [order, setOrder] = useState<Order | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
@@ -23,7 +23,7 @@ export function OrderDetail() {
   const [notes, setNotes] = useState('');
   
   // Estados para adicionar itens
-  const [pendingItems, setPendingItems] = useState<(Omit<OrderItem, 'id'> & { key: string })[]>([]);
+  const [pendingItems, setPendingItems] = useState<(Omit<OrderItem, '_id'> & { key: string })[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [productNotes, setProductNotes] = useState('');
   const [itemsToPrint, setItemsToPrint] = useState<OrderItem[]>([]);
@@ -34,7 +34,7 @@ export function OrderDetail() {
 
   useEffect(() => {
     loadData();
-  }, [id]);
+  }, [_id]);
 
   useEffect(() => {
     if (order) {
@@ -46,7 +46,7 @@ export function OrderDetail() {
     setLoading(true);
     try {
       const [orderData, productsData, categoriesData] = await Promise.all([
-        ordersApi.getById(id!),
+        ordersApi.getById(_id!),
         productsApi.getAll(),
         categoriesApi.getAll(),
       ]);
@@ -71,7 +71,7 @@ export function OrderDetail() {
       ...pendingItems,
       {
         key: Date.now().toString(),
-        productId: product.id,
+        productId: product._id,
         productName: product.name,
         quantity: 1,
         unitPrice: product.price,
@@ -95,7 +95,7 @@ export function OrderDetail() {
       const addedItems: OrderItem[] = [];
 
       for (const item of pendingItems) {
-        const itemToAdd: Omit<OrderItem, 'id'> = {
+        const itemToAdd: Omit<OrderItem, '_id'> = {
           productId: item.productId,
           productName: item.productName,
           quantity: item.quantity,
@@ -103,7 +103,7 @@ export function OrderDetail() {
           total: item.total,
           notes: item.notes,
         };
-        updatedOrder = await ordersApi.addItem(updatedOrder.id, itemToAdd);
+        updatedOrder = await ordersApi.addItem(updatedOrder._id, itemToAdd);
         addedItems.push(updatedOrder.items[updatedOrder.items.length - 1]);
       }
 
@@ -125,7 +125,7 @@ export function OrderDetail() {
   const removeItem = async (itemId: string) => {
     if (!order) return;
     try {
-      const updatedOrder = await ordersApi.removeItem(order.id, itemId);
+      const updatedOrder = await ordersApi.removeItem(order._id, itemId);
       setOrder(updatedOrder);
     } catch (error) {
       alert('Erro ao remover item');
@@ -136,7 +136,7 @@ export function OrderDetail() {
     if (!order) return;
     setPaymentLoading(true);
     try {
-      const updatedOrder = await ordersApi.checkout(order.id, paymentMethod);
+      const updatedOrder = await ordersApi.checkout(order._id, paymentMethod);
       setOrder(updatedOrder);
       setShowPaymentModal(false);
       setPrintFull(true);
@@ -159,7 +159,7 @@ export function OrderDetail() {
     if (!confirm('Deseja realmente cancelar este pedido?')) return;
 
     try {
-      await ordersApi.cancel(order.id);
+      await ordersApi.cancel(order._id);
       navigate('/pedidos');
     } catch (error) {
       alert('Erro ao cancelar pedido');
@@ -170,7 +170,7 @@ export function OrderDetail() {
     if (!order) return;
     setNotes(newNotes);
     try {
-      const updatedOrder = await ordersApi.update(order.id, { notes: newNotes });
+      const updatedOrder = await ordersApi.update(order._id, { notes: newNotes });
       setOrder(updatedOrder);
     } catch (error) {
       alert('Erro ao atualizar observações');
@@ -212,7 +212,7 @@ export function OrderDetail() {
           <ArrowLeft size={20} />
           <span>Voltar para pedidos</span>
         </button>
-        <h1 className="text-2xl lg:text-3xl font-semibold mb-2">Pedido #{order.number}</h1>
+        <h1 className="text-2xl lg:text-3xl font-semibold mb-2">Pedido #{order.publicId ?? order.number}</h1>
         <p className="text-gray-600">Adicionar itens ao pedido existente</p>
       </div>
 
@@ -260,7 +260,7 @@ export function OrderDetail() {
             ) : (
               <div className="space-y-3">
                 {order.items.map((item) => (
-                  <div key={item.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                  <div key={item._id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
                     <div className="flex-1">
                       <p className="font-medium">{item.productName}</p>
                       {item.notes && <p className="text-xs text-orange-600 italic mt-0.5">{item.notes}</p>}
@@ -270,7 +270,7 @@ export function OrderDetail() {
                       R$ {item.total.toFixed(2)}
                     </span>
                     <button
-                      onClick={() => removeItem(item.id)}
+                      onClick={() => removeItem(item._id)}
                       className="text-red-600 hover:bg-red-50 p-2 rounded-lg"
                     >
                       <Trash2 size={18} />
@@ -330,10 +330,10 @@ export function OrderDetail() {
               </button>
               {categories.map((cat) => (
                 <button
-                  key={cat.id}
-                  onClick={() => setSelectedCategory(cat.id)}
+                  key={cat._id}
+                  onClick={() => setSelectedCategory(cat._id)}
                   className={`px-4 py-2 rounded-lg whitespace-nowrap ${
-                    selectedCategory === cat.id
+                    selectedCategory === cat._id
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-100 hover:bg-gray-200'
                   }`}
@@ -347,7 +347,7 @@ export function OrderDetail() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {filteredProducts.map((product) => (
                 <button
-                  key={product.id}
+                  key={product._id}
                   onClick={() => selectProduct(product)}
                   className="bg-white border-2 border-gray-200 rounded-xl p-4 hover:border-blue-600 hover:bg-blue-50 transition text-left"
                 >

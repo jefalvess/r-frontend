@@ -1,37 +1,34 @@
 import type {
   User,
   Category,
-  Ingredient,
   Product,
   Order,
   OrderItem,
-  DashboardStats,
   ReportData,
   OrderType,
   OrderStatus,
   PaymentMethod,
 } from '../types';
 
+interface ImportMeta {
+  env: {
+    PROD: boolean;
+  };
+}
+
 // Mock data storage
 let mockCategories: Category[] = [
-  { id: '1', name: 'Almoço', active: true },
-  { id: '2', name: 'Lanche', active: true },
-  { id: '3', name: 'Bebida', active: true },
-  { id: '4', name: 'Sobremesa', active: true },
-  { id: '5', name: 'Adicional', active: true },
+  { _id: '1', name: 'Almoço', active: true },
+  { _id: '2', name: 'Lanche', active: true },
+  { _id: '3', name: 'Bebida', active: true },
+  { _id: '4', name: 'Sobremesa', active: true },
+  { _id: '5', name: 'Adicional', active: true },
 ];
 
-let mockIngredients: Ingredient[] = [
-  { id: '1', name: 'Frango', unit: 'g', cost: 0.02 },
-  { id: '2', name: 'Arroz', unit: 'g', cost: 0.01 },
-  { id: '3', name: 'Queijo', unit: 'g', cost: 0.04 },
-  { id: '4', name: 'Tomate', unit: 'g', cost: 0.008 },
-  { id: '5', name: 'Alface', unit: 'g', cost: 0.006 },
-];
 
 let mockProducts: Product[] = [
   {
-    id: '1',
+    _id: '1',
     name: 'Parmegiana',
     categoryId: '1',
     price: 35.0,
@@ -44,7 +41,7 @@ let mockProducts: Product[] = [
     ],
   },
   {
-    id: '2',
+    _id: '2',
     name: 'Hambúrguer Artesanal',
     categoryId: '2',
     price: 28.0,
@@ -52,7 +49,7 @@ let mockProducts: Product[] = [
     active: true,
   },
   {
-    id: '3',
+    _id: '3',
     name: 'Refrigerante',
     categoryId: '3',
     price: 6.0,
@@ -60,7 +57,7 @@ let mockProducts: Product[] = [
     active: true,
   },
   {
-    id: '4',
+    _id: '4',
     name: 'Pudim',
     categoryId: '4',
     price: 12.0,
@@ -71,7 +68,7 @@ let mockProducts: Product[] = [
 
 let mockOrders: Order[] = [
   {
-    id: '1',
+    _id: '1',
     number: 101,
     type: 'mesa',
     status: 'aberto',
@@ -79,7 +76,7 @@ let mockOrders: Order[] = [
     tableNumber: '5',
     items: [
       {
-        id: '1',
+        _id: '1',
         productId: '1',
         productName: 'Parmegiana',
         quantity: 2,
@@ -95,7 +92,7 @@ let mockOrders: Order[] = [
     paid: false,
   },
   {
-    id: '2',
+    _id: '2',
     number: 102,
     type: 'delivery',
     status: 'aberto',
@@ -104,7 +101,7 @@ let mockOrders: Order[] = [
     customerAddress: 'Rua ABC, 123',
     items: [
       {
-        id: '1',
+        _id: '1',
         productId: '2',
         productName: 'Hambúrguer Artesanal',
         quantity: 1,
@@ -188,7 +185,7 @@ export const authApi = {
     const data = (await response.json()) as {
       token?: string;
       user?: Partial<User>;
-      id?: string | number;
+      _id?: string | number;
       userName?: string;
       name?: string;
       role?: string;
@@ -197,7 +194,7 @@ export const authApi = {
     const payloadUser = data.user ?? data;
 
     currentUser = {
-      id: String(payloadUser.id ?? '1'),
+      _id: String(payloadUser._id ?? '1'),
       userName: payloadUser.userName ?? userName,
       name: payloadUser.name ?? 'Usuário',
       role: payloadUser.role ?? 'staff',
@@ -225,70 +222,135 @@ export const authApi = {
 // Categories API
 export const categoriesApi = {
   getAll: async (): Promise<Category[]> => {
-    await delay();
-    return mockCategories;
+    const response = await fetch(`${API_BASE_URL}/categories`, {
+      method: 'GET',
+      headers: buildApiHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error('Erro ao buscar categorias');
+    }
+
+    return response.json() as Promise<Category[]>;
   },
 
-  getById: async (id: string): Promise<Category> => {
+  getById: async (_id: string): Promise<Category> => {
     await delay();
-    const category = mockCategories.find((c) => c.id === id);
+    const category = mockCategories.find((c) => c._id === _id);
     if (!category) throw new Error('Categoria não encontrada');
     return category;
   },
 
-  create: async (data: Omit<Category, 'id'>): Promise<Category> => {
-    await delay();
-    const newCategory = { ...data, id: Date.now().toString() };
-    mockCategories.push(newCategory);
-    return newCategory;
+  create: async (data: Omit<Category, '_id'>): Promise<Category> => {
+    const response = await fetch(`${API_BASE_URL}/categories`, {
+      method: 'POST',
+      headers: buildApiHeaders(),
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      throw new Error('Erro ao criar categoria');
+    }
+
+    return response.json() as Promise<Category>;
   },
 
-  update: async (id: string, data: Partial<Category>): Promise<Category> => {
-    await delay();
-    const index = mockCategories.findIndex((c) => c.id === id);
-    if (index === -1) throw new Error('Categoria não encontrada');
-    mockCategories[index] = { ...mockCategories[index], ...data };
-    return mockCategories[index];
+  update: async (_id: string, data: Partial<Category>): Promise<Category> => {
+    const response = await fetch(`${API_BASE_URL}/categories/${_id}`, {
+      method: 'PUT',
+      headers: buildApiHeaders(),
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      throw new Error('Erro ao atualizar categoria');
+    }
+
+    return response.json() as Promise<Category>;
   },
 
-  delete: async (id: string): Promise<void> => {
-    await delay();
-    mockCategories = mockCategories.filter((c) => c.id !== id);
+  delete: async (_id: string): Promise<void> => {
+    const response = await fetch(`${API_BASE_URL}/categories/${_id}`, {
+      method: 'DELETE',
+      headers: buildApiHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error('Erro ao excluir categoria');
+    }
   },
 };
 
 // Products API
 export const productsApi = {
   getAll: async (): Promise<Product[]> => {
-    await delay();
-    return mockProducts;
+    type ProductApiItem = Omit<Product, 'categoryId'> & {
+      categoryId: string | { _id: string };
+    };
+
+    const normalizeProduct = (product: ProductApiItem): Product => ({
+      ...product,
+      categoryId:
+        typeof product.categoryId === 'string' ? product.categoryId : product.categoryId._id,
+    });
+
+    const response = await fetch(`${API_BASE_URL}/products`, {
+      method: 'GET',
+      headers: buildApiHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error('Erro ao buscar produtos');
+    }
+
+    const data = (await response.json()) as ProductApiItem[];
+    return data.map(normalizeProduct);
   },
 
-  getById: async (id: string): Promise<Product> => {
+  getById: async (_id: string): Promise<Product> => {
     await delay();
-    const product = mockProducts.find((p) => p.id === id);
+    const product = mockProducts.find((p) => p._id === _id);
     if (!product) throw new Error('Produto não encontrado');
     return product;
   },
 
-  create: async (data: Omit<Product, 'id'>): Promise<Product> => {
-    await delay();
-    const newProduct = { ...data, id: Date.now().toString() };
-    mockProducts.push(newProduct);
-    return newProduct;
+  create: async (data: Omit<Product, '_id'>): Promise<Product> => {
+    const response = await fetch(`${API_BASE_URL}/products`, {
+      method: 'POST',
+      headers: buildApiHeaders(),
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      throw new Error('Erro ao criar produto');
+    }
+
+    return response.json() as Promise<Product>;
   },
 
-  update: async (id: string, data: Partial<Product>): Promise<Product> => {
-    await delay();
-    const index = mockProducts.findIndex((p) => p.id === id);
-    if (index === -1) throw new Error('Produto não encontrado');
-    mockProducts[index] = { ...mockProducts[index], ...data };
-    return mockProducts[index];
+  update: async (_id: string, data: Partial<Product>): Promise<Product> => {
+    const response = await fetch(`${API_BASE_URL}/products/${_id}`, {
+      method: 'PUT',
+      headers: buildApiHeaders(),
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      throw new Error('Erro ao atualizar produto');
+    }
+
+    return response.json() as Promise<Product>;
   },
 
-  delete: async (id: string): Promise<void> => {
-    await delay();
-    mockProducts = mockProducts.filter((p) => p.id !== id);
+  delete: async (_id: string): Promise<void> => {
+    const response = await fetch(`${API_BASE_URL}/products/${_id}`, {
+      method: 'DELETE',
+      headers: buildApiHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error('Erro ao excluir produto');
+    }
   },
 };
 
@@ -298,136 +360,267 @@ export const ordersApi = {
     type?: OrderType;
     status?: OrderStatus;
   }): Promise<Order[]> => {
-    await delay();
-    let filtered = [...mockOrders];
-    if (filters?.type) {
-      filtered = filtered.filter((o) => o.type === filters.type);
-    }
+    const normalizeOrderItem = (item: any): OrderItem => {
+      const quantity = Number(item.quantity ?? 0);
+      const unitPrice = Number(item.unitPrice ?? 0);
+      const total = Number(item.total ?? quantity * unitPrice);
+
+      return {
+        _id: String(item._id ?? item.id ?? Date.now().toString()),
+        productId: String(item.productId ?? item.product?._id ?? ''),
+        productName: item.productName ?? item.product?.name ?? 'Produto',
+        quantity,
+        unitPrice,
+        total,
+        notes: item.notes,
+        extras: Array.isArray(item.extras) ? item.extras : undefined,
+      };
+    };
+
+    const normalizeOrder = (order: any): Order => {
+      const items = Array.isArray(order.items) ? order.items.map(normalizeOrderItem) : [];
+      const subtotal = Number(
+        order.subtotal ?? items.reduce((sum: number, item: OrderItem) => sum + item.total, 0)
+      );
+      const discount = Number(order.discount ?? 0);
+      const deliveryFee = Number(order.deliveryFee ?? 0);
+      const total = Number(order.total ?? subtotal - discount + deliveryFee);
+
+      return {
+        _id: String(order._id ?? order.id ?? ''),
+        publicId: String(order.publicId ?? order.pid ?? order.number ?? ''),
+        number: Number(order.number ?? 0),
+        type: (order.type ?? 'delivery') as OrderType,
+        status: (order.status ?? 'aberto') as OrderStatus,
+        customerName: order.customerName ?? 'Cliente',
+        customerPhone: order.customerPhone,
+        customerAddress: order.customerAddress,
+        tableNumber: order.tableNumber,
+        items,
+        subtotal,
+        discount,
+        deliveryFee,
+        total,
+        notes: order.notes,
+        createdAt: order.createdAt ?? new Date().toISOString(),
+        paymentMethod: order.paymentMethod as PaymentMethod | undefined,
+        paid: Boolean(order.paid ?? order.status === 'pago'),
+      };
+    };
+
+    const queryParams = new URLSearchParams();
     if (filters?.status) {
-      filtered = filtered.filter((o) => o.status === filters.status);
+      queryParams.set('status', filters.status);
     }
+    if (filters?.type) {
+      queryParams.set('type', filters.type);
+    }
+
+    const endpoint = queryParams.toString()
+      ? `${API_BASE_URL}/orders/open?${queryParams.toString()}`
+      : `${API_BASE_URL}/orders/open`;
+
+    const response = await fetch(endpoint, {
+      method: 'GET',
+      headers: buildApiHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error('Erro ao buscar pedidos');
+    }
+
+    let filtered = ((await response.json()) as any[]).map(normalizeOrder);
+
     return filtered;
   },
 
-  getById: async (id: string): Promise<Order> => {
-    await delay();
-    const order = mockOrders.find((o) => o.id === id);
-    if (!order) throw new Error('Pedido não encontrado');
-    return order;
-  },
+  getById: async (_id: string): Promise<Order> => {
+    const normalizeOrderItem = (item: any): OrderItem => {
+      const quantity = Number(item.quantity ?? 0);
+      const unitPrice = Number(item.unitPrice ?? 0);
+      const total = Number(item.total ?? quantity * unitPrice);
 
-  create: async (data: Omit<Order, 'id' | 'number' | 'createdAt'>): Promise<Order> => {
-    await delay();
-    const newOrder: Order = {
-      ...data,
-      id: Date.now().toString(),
-      number: Math.max(...mockOrders.map((o) => o.number), 100) + 1,
-      createdAt: new Date().toISOString(),
+      return {
+        _id: String(item._id ?? item.id ?? Date.now().toString()),
+        productId: String(item.productId ?? item.product?._id ?? ''),
+        productName: item.productName ?? item.product?.name ?? 'Produto',
+        quantity,
+        unitPrice,
+        total,
+        notes: item.notes,
+        extras: Array.isArray(item.extras) ? item.extras : undefined,
+      };
     };
-    mockOrders.push(newOrder);
-    return newOrder;
+
+    const normalizeOrder = (order: any): Order => {
+      const items = Array.isArray(order.items) ? order.items.map(normalizeOrderItem) : [];
+      const subtotal = Number(
+        order.subtotal ?? items.reduce((sum: number, item: OrderItem) => sum + item.total, 0)
+      );
+      const discount = Number(order.discount ?? 0);
+      const deliveryFee = Number(order.deliveryFee ?? 0);
+      const total = Number(order.total ?? subtotal - discount + deliveryFee);
+
+      return {
+        _id: String(order._id ?? order.id ?? ''),
+        publicId: String(order.publicId ?? order.pid ?? order.number ?? ''),
+        number: Number(order.number ?? 0),
+        type: (order.type ?? 'delivery') as OrderType,
+        status: (order.status ?? 'aberto') as OrderStatus,
+        customerName: order.customerName ?? 'Cliente',
+        customerPhone: order.customerPhone,
+        customerAddress: order.customerAddress,
+        tableNumber: order.tableNumber,
+        items,
+        subtotal,
+        discount,
+        deliveryFee,
+        total,
+        notes: order.notes,
+        createdAt: order.createdAt ?? new Date().toISOString(),
+        paymentMethod: order.paymentMethod as PaymentMethod | undefined,
+        paid: Boolean(order.paid ?? order.status === 'pago'),
+      };
+    };
+
+    const response = await fetch(`${API_BASE_URL}/orders/${_id}`, {
+      method: 'GET',
+      headers: buildApiHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error('Pedido não encontrado');
+    }
+
+    return normalizeOrder(await response.json());
   },
 
-  update: async (id: string, data: Partial<Order>): Promise<Order> => {
-    await delay();
-    const index = mockOrders.findIndex((o) => o.id === id);
-    if (index === -1) throw new Error('Pedido não encontrado');
-    mockOrders[index] = { ...mockOrders[index], ...data };
-    return mockOrders[index];
+  create: async (data: Omit<Order, '_id' | 'number' | 'createdAt'>): Promise<Order> => {
+    const payload = {
+      customerName: data.customerName,
+      customerPhone: data.customerPhone,
+      customerAddress: data.customerAddress,
+      tableNumber: data.tableNumber,
+      type: data.type,
+      notes: data.notes,
+    };
+
+    const response = await fetch(`${API_BASE_URL}/orders`, {
+      method: 'POST',
+      headers: buildApiHeaders(),
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error('Erro ao criar pedido');
+    }
+
+    const createdOrder = (await response.json()) as { _id?: string; id?: string };
+    const orderId = String(createdOrder._id ?? createdOrder.id ?? '');
+
+    if (!orderId) {
+      throw new Error('Pedido criado sem id');
+    }
+
+    for (const item of data.items) {
+      await fetch(`${API_BASE_URL}/orders/${orderId}/items`, {
+        method: 'POST',
+        headers: buildApiHeaders(),
+        body: JSON.stringify({
+          productId: item.productId,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          notes: item.notes,
+          extras: Array.isArray(item.extras) ? item.extras.join(', ') : undefined,
+        }),
+      });
+    }
+
+    return ordersApi.getById(orderId);
   },
 
-  addItem: async (orderId: string, item: Omit<OrderItem, 'id'>): Promise<Order> => {
-    await delay();
-    const order = mockOrders.find((o) => o.id === orderId);
-    if (!order) throw new Error('Pedido não encontrado');
+  update: async (_id: string, data: Partial<Order>): Promise<Order> => {
+    if (data.status) {
+      return ordersApi.updateStatus(_id, data.status);
+    }
 
-    const newItem: OrderItem = { ...item, id: Date.now().toString() };
-    order.items.push(newItem);
+    const currentOrder = await ordersApi.getById(_id);
+    return { ...currentOrder, ...data };
+  },
 
-    order.subtotal = order.items.reduce((sum, i) => sum + i.total, 0);
-    order.total = order.subtotal - order.discount + order.deliveryFee;
+  addItem: async (orderId: string, item: Omit<OrderItem, '_id'>): Promise<Order> => {
+    const response = await fetch(`${API_BASE_URL}/orders/${orderId}/items`, {
+      method: 'POST',
+      headers: buildApiHeaders(),
+      body: JSON.stringify({
+        productId: item.productId,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        notes: item.notes,
+        extras: Array.isArray(item.extras) ? item.extras.join(', ') : undefined,
+      }),
+    });
 
-    return order;
+    if (!response.ok) {
+      throw new Error('Erro ao adicionar item');
+    }
+
+    return ordersApi.getById(orderId);
   },
 
   removeItem: async (orderId: string, itemId: string): Promise<Order> => {
-    await delay();
-    const order = mockOrders.find((o) => o.id === orderId);
-    if (!order) throw new Error('Pedido não encontrado');
+    const response = await fetch(`${API_BASE_URL}/orders/${orderId}/items/${itemId}`, {
+      method: 'DELETE',
+      headers: buildApiHeaders(),
+    });
 
-    order.items = order.items.filter((i) => i.id !== itemId);
-    order.subtotal = order.items.reduce((sum, i) => sum + i.total, 0);
-    order.total = order.subtotal - order.discount + order.deliveryFee;
+    if (!response.ok) {
+      throw new Error('Erro ao remover item');
+    }
 
-    return order;
+    return ordersApi.getById(orderId);
   },
 
-  updateStatus: async (id: string, status: OrderStatus): Promise<Order> => {
-    await delay();
-    const order = mockOrders.find((o) => o.id === id);
-    if (!order) throw new Error('Pedido não encontrado');
-    order.status = status;
-    return order;
+  updateStatus: async (_id: string, status: OrderStatus): Promise<Order> => {
+    const response = await fetch(`${API_BASE_URL}/orders/${_id}/status`, {
+      method: 'PUT',
+      headers: buildApiHeaders(),
+      body: JSON.stringify({ status }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Erro ao atualizar status do pedido');
+    }
+
+    return ordersApi.getById(_id);
   },
 
   checkout: async (
-    id: string,
+    _id: string,
     paymentMethod: PaymentMethod,
     discount: number = 0
   ): Promise<Order> => {
-    await delay();
-    const order = mockOrders.find((o) => o.id === id);
-    if (!order) throw new Error('Pedido não encontrado');
+    const currentOrder = await ordersApi.getById(_id);
 
-    order.discount = discount;
-    order.total = order.subtotal - order.discount + order.deliveryFee;
-    order.paymentMethod = paymentMethod;
-    order.paid = true;
-    order.status = 'pago';
-
-    return order;
-  },
-
-  cancel: async (id: string): Promise<Order> => {
-    await delay();
-    const order = mockOrders.find((o) => o.id === id);
-    if (!order) throw new Error('Pedido não encontrado');
-    order.status = 'cancelado';
-    return order;
-  },
-};
-
-// Dashboard API
-export const dashboardApi = {
-  getStats: async (): Promise<DashboardStats> => {
-    await delay();
-
-    const openOrders = mockOrders.filter((o) => !o.paid).length;
-    const todayOrders = mockOrders.filter((o) => o.paid);
-    const todaySales = todayOrders.reduce((sum, o) => sum + o.total, 0);
-    const activeDeliveries = mockOrders.filter(
-      (o) => o.type === 'delivery' && o.status !== 'pago' && o.status !== 'cancelado'
-    ).length;
-
-    const productCounts: Record<string, number> = {};
-    todayOrders.forEach((order) => {
-      order.items.forEach((item) => {
-        productCounts[item.productName] = (productCounts[item.productName] || 0) + item.quantity;
-      });
+    const response = await fetch(`${API_BASE_URL}/orders/${_id}/close`, {
+      method: 'POST',
+      headers: buildApiHeaders(),
+      body: JSON.stringify({
+        discount,
+        deliveryFee: currentOrder.deliveryFee,
+        paymentMethod,
+      }),
     });
 
-    const topProducts = Object.entries(productCounts)
-      .map(([name, quantity]) => ({ name, quantity }))
-      .sort((a, b) => b.quantity - a.quantity)
-      .slice(0, 5);
+    if (!response.ok) {
+      throw new Error('Erro ao fechar pedido');
+    }
 
-    return {
-      openOrders,
-      todaySales,
-      activeDeliveries,
-      topProducts,
-      lowStockAlerts: [],
-    };
+    return ordersApi.getById(_id);
+  },
+
+  cancel: async (_id: string): Promise<Order> => {
+    return ordersApi.updateStatus(_id, 'cancelado');
   },
 };
 

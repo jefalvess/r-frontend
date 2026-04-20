@@ -38,15 +38,15 @@ export const router = createBrowserRouter(
           element: <NewOrder />,
         },
         {
-          path: 'pedidos/:id',
+          path: 'pedidos/:_id',
           element: <OrderDetail />,
         },
         {
-          path: 'pedidos/:id/checkout',
+          path: 'pedidos/:_id/checkout',
           element: <Checkout />,
         },
         {
-          path: 'pedidos/:id/confirmacao',
+          path: 'pedidos/:_id/confirmacao',
           element: <Confirmation />,
         },
         {

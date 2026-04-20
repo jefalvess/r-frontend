@@ -40,7 +40,7 @@ export function Products() {
     e.preventDefault();
     try {
       if (editingProduct) {
-        await productsApi.update(editingProduct.id, {
+        await productsApi.update(editingProduct._id, {
           ...formData,
           price: parseFloat(formData.price),
         });
@@ -69,10 +69,10 @@ export function Products() {
     setShowModal(true);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (_id: string) => {
     if (!confirm('Deseja realmente excluir este produto?')) return;
     try {
-      await productsApi.delete(id);
+      await productsApi.delete(_id);
       await loadData();
     } catch (error) {
       alert('Erro ao excluir produto');
@@ -134,9 +134,9 @@ export function Products() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredProducts.map((product) => {
-            const category = categories.find((c) => c.id === product.categoryId);
+            const category = categories.find((c) => c._id === product.categoryId);
             return (
-              <div key={product.id} className="bg-white rounded-xl shadow-sm p-6">
+              <div key={product._id} className="bg-white rounded-xl shadow-sm p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <h3 className="font-semibold text-lg mb-1">{product.name}</h3>
@@ -163,7 +163,7 @@ export function Products() {
                       <Edit size={18} />
                     </button>
                     <button
-                      onClick={() => handleDelete(product.id)}
+                      onClick={() => handleDelete(product._id)}
                       className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
                     >
                       <Trash2 size={18} />
@@ -211,7 +211,7 @@ export function Products() {
                 >
                   <option value="">Selecione uma categoria</option>
                   {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
+                    <option key={cat._id} value={cat._id}>
                       {cat.name}
                     </option>
                   ))}

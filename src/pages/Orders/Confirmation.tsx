@@ -2,7 +2,7 @@ import { CheckCircle } from 'lucide-react';
 import { Link, useParams } from 'react-router';
 
 export function Confirmation() {
-  const { id } = useParams();
+  const { _id } = useParams();
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
@@ -14,7 +14,7 @@ export function Confirmation() {
         <p className="text-gray-600 mb-8">O pedido foi finalizado com sucesso.</p>
         <div className="space-y-3">
           <Link
-            to={`/pedidos/${id}`}
+            to={`/pedidos/${_id}`}
             className="block w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition"
           >
             Ver Pedido

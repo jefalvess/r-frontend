@@ -51,8 +51,9 @@ export function OrdersList() {
   const filteredOrders = orders.filter((order) => {
     if (!searchTerm) return true;
     const term = searchTerm.toLowerCase();
+    const pid = (order.publicId ?? order.number.toString()).toLowerCase();
     return (
-      order.number.toString().includes(term) ||
+      pid.includes(term) ||
       order.customerName.toLowerCase().includes(term) ||
       order.customerPhone?.includes(term)
     );
@@ -129,15 +130,15 @@ export function OrdersList() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredOrders.map((order) => (
             <Link
-              key={order.id}
-              to={`/pedidos/${order.id}`}
+              key={order._id}
+              to={`/pedidos/${order._id}`}
               className="bg-white rounded-xl shadow-sm hover:shadow-md transition p-6"
             >
               {/* Header */}
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <div className="bg-blue-100 text-blue-600 font-semibold px-3 py-1 rounded-lg">
-                    #{order.number}
+                    #{order.publicId ?? order.number}
                   </div>
                   <span
                     className={`px-3 py-1 rounded-lg text-sm font-medium ${

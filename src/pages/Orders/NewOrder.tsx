@@ -12,7 +12,7 @@ export function NewOrder() {
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('todos');
   const [searchTerm, setSearchTerm] = useState('');
-  const [items, setItems] = useState<(Omit<OrderItem, 'id'> & { key: string })[]>([]);
+  const [items, setItems] = useState<(Omit<OrderItem, '_id'> & { key: string })[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [productNotes, setProductNotes] = useState('');
   const [formData, setFormData] = useState({
@@ -52,7 +52,7 @@ export function NewOrder() {
       ...items,
       {
         key: Date.now().toString(),
-        productId: product.id,
+        productId: product._id,
         productName: product.name,
         quantity: 1,
         unitPrice: product.price,
@@ -92,7 +92,7 @@ export function NewOrder() {
       const subtotal = items.reduce((sum, i) => sum + i.total, 0);
       const order = await ordersApi.create({
         ...formData,
-        items: items.map(({ key: _key, ...item }) => ({ ...item, id: _key })),
+        items: items.map(({ key: _key, ...item }) => ({ ...item, _id: _key })),
         subtotal,
         discount: 0,
         deliveryFee: formData.type === 'delivery' ? 8 : 0,
@@ -101,7 +101,7 @@ export function NewOrder() {
         paid: false,
       });
 
-      navigate(`/pedidos/${order.id}`);
+      navigate(`/pedidos/${order._id}`);
     } catch (error) {
       alert('Erro ao criar pedido');
     } finally {
@@ -253,10 +253,10 @@ export function NewOrder() {
                 </button>
                 {categories.map((cat) => (
                   <button
-                    key={cat.id}
-                    onClick={() => setSelectedCategory(cat.id)}
+                    key={cat._id}
+                    onClick={() => setSelectedCategory(cat._id)}
                     className={`px-4 py-2 rounded-lg whitespace-nowrap text-sm transition ${
-                      selectedCategory === cat.id
+                      selectedCategory === cat._id
                         ? 'bg-blue-600 text-white'
                         : 'bg-gray-100 hover:bg-gray-200'
                     }`}
@@ -277,7 +277,7 @@ export function NewOrder() {
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {filteredProducts.map((product) => (
                   <button
-                    key={product.id}
+                    key={product._id}
                     onClick={() => selectProduct(product)}
                     className="bg-white border-2 border-gray-200 rounded-lg p-3 hover:border-blue-600 hover:bg-blue-50 transition text-left"
                   >
