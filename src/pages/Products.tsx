@@ -11,6 +11,7 @@ export function Products() {
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showInactive, setShowInactive] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     categoryId: '',
@@ -92,9 +93,12 @@ export function Products() {
     });
   };
 
-  const filteredProducts = products.filter((product) =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredProducts = products.filter((product) => {
+    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = showInactive ? true : product.active;
+
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <div className="p-4 lg:p-8 max-w-7xl mx-auto">
@@ -114,15 +118,27 @@ export function Products() {
 
       {/* Search */}
       <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-          <input
-            type="text"
-            placeholder="Buscar produto..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-          />
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <input
+              type="text"
+              placeholder="Buscar produto..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+            />
+          </div>
+
+          <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700">
+            <input
+              type="checkbox"
+              checked={showInactive}
+              onChange={(e) => setShowInactive(e.target.checked)}
+              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+            />
+            Mostrar produtos inativos
+          </label>
         </div>
       </div>
 
