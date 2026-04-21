@@ -54,7 +54,7 @@ export function Layout() {
         <div className="flex flex-col h-full">
           <div className="p-6 border-b border-gray-200">
             <h1 className="font-semibold text-lg">Sistema Restaurante</h1>
-            <p className="text-sm text-gray-600 mt-1">{user?.name}</p>
+            <p style={{ marginTop: '30px' }} className="text-sm text-gray-600">Usuario: {user?.name}</p>
           </div>
 
           <nav className="flex-1 p-4 space-y-1">
