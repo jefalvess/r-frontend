@@ -189,8 +189,8 @@ export function NewOrder() {
         items: items.map(({ key: _key, ...item }) => ({ ...item, _id: _key })),
         subtotal,
         discount: 0,
-        deliveryFee: formData.type === 'delivery' ? 8 : 0,
-        total: subtotal + (formData.type === 'delivery' ? 8 : 0),
+        deliveryFee: 0,
+        total: subtotal,
         status: 'aberto',
         paid: false,
       });
@@ -221,7 +221,7 @@ export function NewOrder() {
   };
 
   const subtotal = items.reduce((sum, i) => sum + i.total, 0);
-  const deliveryFee = formData.type === 'delivery' ? 8 : 0;
+  const deliveryFee = 0;
   const total = subtotal + deliveryFee;
 
   return (

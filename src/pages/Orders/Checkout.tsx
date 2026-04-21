@@ -18,7 +18,14 @@ export function Checkout() {
   const [loading, setLoading] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('dinheiro');
   const [discount, setDiscount] = useState(0);
+  const [deliveryFee, setDeliveryFee] = useState(0);
   const [processing, setProcessing] = useState(false);
+
+  const parseIntegerCurrency = (value: string) => {
+    const parsed = Number.parseInt(value, 10);
+    if (Number.isNaN(parsed) || parsed < 0) return 0;
+    return parsed;
+  };
 
   useEffect(() => {
     loadOrder();
@@ -29,6 +36,7 @@ export function Checkout() {
     try {
       const data = await ordersApi.getById(_id!);
       setOrder(data);
+      setDeliveryFee(0);
     } catch (error) {
       toast.error('Erro ao carregar pedido');
       navigate('/pedidos');
@@ -41,9 +49,11 @@ export function Checkout() {
     e.preventDefault();
     if (!order) return;
 
+    const appliedDeliveryFee = order.type === 'delivery' ? deliveryFee : 0;
+
     setProcessing(true);
     try {
-      await ordersApi.checkout(order._id, paymentMethod, discount);
+      await ordersApi.checkout(order._id, paymentMethod, discount, appliedDeliveryFee);
       navigate(`/pedidos/${order._id}/confirmacao`);
     } catch (error) {
       toast.error('Erro ao finalizar pagamento');
@@ -65,8 +75,10 @@ export function Checkout() {
 
   if (!order) return null;
 
+  const isDelivery = order.type === 'delivery';
   const subtotal = order.subtotal;
-  const finalTotal = subtotal - discount + order.deliveryFee;
+  const appliedDeliveryFee = isDelivery ? deliveryFee : 0;
+  const finalTotal = subtotal - discount + appliedDeliveryFee;
 
   return (
     <div className="p-4 lg:p-8 max-w-3xl mx-auto">
@@ -102,14 +114,32 @@ export function Checkout() {
               <span className="text-gray-600">Subtotal</span>
               <span>R$ {subtotal.toFixed(2)}</span>
             </div>
-            {order.deliveryFee > 0 && (
+            {isDelivery && (
               <div className="flex justify-between">
                 <span className="text-gray-600">Taxa de Entrega</span>
-                <span>R$ {order.deliveryFee.toFixed(2)}</span>
+                <span>R$ {appliedDeliveryFee.toFixed(2)}</span>
               </div>
             )}
           </div>
         </div>
+
+        {isDelivery && (
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <label htmlFor="deliveryFee" className="block text-sm font-medium text-gray-700 mb-2">
+              Taxa de Entrega (R$)
+            </label>
+            <input
+              id="deliveryFee"
+              type="number"
+              min="0"
+              step="1"
+              value={deliveryFee}
+              onChange={(e) => setDeliveryFee(parseIntegerCurrency(e.target.value))}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              placeholder="0"
+            />
+          </div>
+        )}
 
         {/* Discount */}
         <div className="bg-white rounded-xl shadow-sm p-6">
@@ -121,11 +151,14 @@ export function Checkout() {
             type="number"
             min="0"
             max={subtotal}
-            step="0.01"
+            step="1"
             value={discount}
-            onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
+            onChange={(e) => {
+              const nextDiscount = parseIntegerCurrency(e.target.value);
+              setDiscount(Math.min(nextDiscount, Math.floor(subtotal)));
+            }}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-            placeholder="0.00"
+            placeholder="0"
           />
         </div>
 

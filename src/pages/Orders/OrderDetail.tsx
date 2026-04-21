@@ -32,6 +32,13 @@ export function OrderDetail() {
   const [printFull, setPrintFull] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
+  const [deliveryFee, setDeliveryFee] = useState(0);
+
+  const parseIntegerCurrency = (value: string) => {
+    const parsed = Number.parseInt(value, 10);
+    if (Number.isNaN(parsed) || parsed < 0) return 0;
+    return parsed;
+  };
 
   useEffect(() => {
     loadData();
@@ -40,6 +47,7 @@ export function OrderDetail() {
   useEffect(() => {
     if (order) {
       setNotes(order.notes || '');
+      setDeliveryFee(0);
     }
   }, [order]);
 
@@ -135,9 +143,10 @@ export function OrderDetail() {
 
   const handleCheckout = async (paymentMethod: PaymentMethod) => {
     if (!order) return;
+    const appliedDeliveryFee = order.type === 'delivery' ? deliveryFee : 0;
     setPaymentLoading(true);
     try {
-      const updatedOrder = await ordersApi.checkout(order._id, paymentMethod);
+      const updatedOrder = await ordersApi.checkout(order._id, paymentMethod, 0, appliedDeliveryFee);
       setOrder(updatedOrder);
       setShowPaymentModal(false);
       setPrintFull(true);
@@ -522,8 +531,49 @@ export function OrderDetail() {
       {showPaymentModal && order && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-sm w-full p-6">
+            {(() => {
+              const isDelivery = order.type === 'delivery';
+              const appliedDeliveryFee = isDelivery ? deliveryFee : 0;
+
+              return (
+                <>
             <h2 className="text-xl font-semibold mb-2">Forma de Pagamento</h2>
-            <p className="text-gray-500 text-sm mb-6">Total: <span className="font-semibold text-gray-900">R$ {order.total.toFixed(2)}</span></p>
+            <div className="text-sm text-gray-600 mb-4 space-y-1">
+              <p>
+                Subtotal:{' '}
+                <span className="font-semibold text-gray-900">R$ {order.subtotal.toFixed(2)}</span>
+              </p>
+              {isDelivery && (
+                <p>
+                  Taxa de Entrega:{' '}
+                  <span className="font-semibold text-gray-900">R$ {appliedDeliveryFee.toFixed(2)}</span>
+                </p>
+              )}
+              <p>
+                Total:{' '}
+                <span className="font-semibold text-gray-900">
+                  R$ {(order.subtotal + appliedDeliveryFee).toFixed(2)}
+                </span>
+              </p>
+            </div>
+
+            {isDelivery && (
+              <div className="mb-4">
+                <label htmlFor="modalDeliveryFee" className="block text-sm font-medium text-gray-700 mb-2">
+                  Taxa de Entrega (R$)
+                </label>
+                <input
+                  id="modalDeliveryFee"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={deliveryFee}
+                  onChange={(e) => setDeliveryFee(parseIntegerCurrency(e.target.value))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                />
+              </div>
+            )}
+
             <div className="space-y-3">
               {[
                 { value: 'dinheiro', label: '💵 Dinheiro' },
@@ -547,6 +597,9 @@ export function OrderDetail() {
             >
               Cancelar
             </button>
+                </>
+              );
+            })()}
           </div>
         </div>
       )}

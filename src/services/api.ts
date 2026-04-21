@@ -598,16 +598,19 @@ export const ordersApi = {
   checkout: async (
     _id: string,
     paymentMethod: PaymentMethod,
-    discount: number = 0
+    discount: number = 0,
+    deliveryFee?: number
   ): Promise<Order> => {
     const currentOrder = await ordersApi.getById(_id);
+    const appliedDeliveryFee =
+      typeof deliveryFee === 'number' ? Math.max(0, deliveryFee) : currentOrder.deliveryFee;
 
     const response = await fetch(`${API_BASE_URL}/orders/${_id}/close`, {
       method: 'POST',
       headers: buildApiHeaders(),
       body: JSON.stringify({
         discount,
-        deliveryFee: currentOrder.deliveryFee,
+        deliveryFee: appliedDeliveryFee,
         paymentMethod,
       }),
     });

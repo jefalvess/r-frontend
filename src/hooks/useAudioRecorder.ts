@@ -32,6 +32,22 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
 
   const startRecording = useCallback(async () => {
     try {
+      if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+        throw new Error('Gravação de áudio indisponível neste ambiente.');
+      }
+
+      if (!window.isSecureContext) {
+        throw new Error('Para usar o microfone, abra o sistema em HTTPS.');
+      }
+
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error('Seu navegador não suporta acesso ao microfone.');
+      }
+
+      if (typeof MediaRecorder === 'undefined') {
+        throw new Error('Seu navegador não suporta gravação de áudio. Atualize o navegador.');
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream);
       mimeTypeRef.current = mediaRecorder.mimeType || 'audio/webm';
@@ -48,7 +64,54 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
       setIsRecording(true);
     } catch (error) {
       console.error('Erro ao acessar o microfone:', error);
-      throw new Error('Não foi possível acessar o microfone. Verifique as permissões.');
+
+      if (error instanceof DOMException) {
+        if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+          const permissionsApi = navigator.permissions as
+            | {
+                query: (permissionDesc: { name: 'microphone' }) => Promise<{ state: string }>;
+              }
+            | undefined;
+
+          try {
+            if (permissionsApi?.query) {
+              const permission = await permissionsApi.query({ name: 'microphone' });
+
+              if (permission.state === 'prompt') {
+                throw new Error('Permissão de microfone ainda não aceita. Toque em gravar novamente e selecione Permitir.');
+              }
+
+              if (permission.state === 'denied') {
+                throw new Error('Permissão de microfone negada. Ative o microfone nas configurações do navegador.');
+              }
+            }
+          } catch (permissionError) {
+            if (permissionError instanceof Error) {
+              throw permissionError;
+            }
+          }
+
+          throw new Error('Permissão de microfone não concedida. Toque em gravar novamente e permita o acesso.');
+        }
+
+        if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+          throw new Error('Nenhum microfone foi encontrado no dispositivo.');
+        }
+
+        if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+          throw new Error('Não foi possível usar o microfone. Feche outros apps que estejam usando áudio.');
+        }
+
+        if (error.name === 'NotSupportedError') {
+          throw new Error('Formato de gravação não suportado neste dispositivo.');
+        }
+
+        if (error.name === 'SecurityError') {
+          throw new Error('Bloqueio de segurança ao acessar microfone. Verifique HTTPS e permissões.');
+        }
+      }
+
+      throw new Error('Não foi possível acessar o microfone. Verifique as permissões do navegador.');
     }
   }, []);
 
