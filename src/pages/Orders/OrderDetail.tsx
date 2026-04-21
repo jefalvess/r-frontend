@@ -27,6 +27,7 @@ export function OrderDetail() {
   const [pendingItems, setPendingItems] = useState<(Omit<OrderItem, '_id'> & { key: string })[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [productNotes, setProductNotes] = useState('');
+  const [productUnitPriceInput, setProductUnitPriceInput] = useState('');
   const [itemsToPrint, setItemsToPrint] = useState<OrderItem[]>([]);
   const [showProducts, setShowProducts] = useState(false);
   const [printFull, setPrintFull] = useState(false);
@@ -79,9 +80,13 @@ export function OrderDetail() {
   const selectProduct = (product: Product) => {
     setSelectedProduct(product);
     setProductNotes('');
+    setProductUnitPriceInput(product.price.toFixed(2));
   };
 
   const confirmProduct = (product: Product) => {
+    const parsedPrice = Number.parseFloat(productUnitPriceInput.replace(',', '.'));
+    const unitPrice = Number.isNaN(parsedPrice) || parsedPrice < 0 ? product.price : parsedPrice;
+
     setPendingItems([
       ...pendingItems,
       {
@@ -89,13 +94,14 @@ export function OrderDetail() {
         productId: product._id,
         productName: product.name,
         quantity: 1,
-        unitPrice: product.price,
-        total: product.price,
+        unitPrice,
+        total: unitPrice,
         notes: productNotes || undefined,
       },
     ]);
     setSelectedProduct(null);
     setProductNotes('');
+    setProductUnitPriceInput('');
   };
 
   const removePendingItem = (key: string) => {
@@ -490,19 +496,31 @@ export function OrderDetail() {
               <div className="flex items-center justify-between mb-1">
                 <h2 className="text-xl font-semibold">{selectedProduct.name}</h2>
                 <button
-                  onClick={() => setSelectedProduct(null)}
+                  onClick={() => {
+                    setSelectedProduct(null);
+                    setProductUnitPriceInput('');
+                    setProductNotes('');
+                  }}
                   className="text-gray-400 hover:text-gray-600"
                 >
                   <XCircle size={24} />
                 </button>
               </div>
-
-              <p className="text-lg font-semibold text-blue-600 mt-2">
-                R$ {selectedProduct.price.toFixed(2)}
-              </p>
             </div>
 
             <div className="p-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Preço unitário (R$)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={productUnitPriceInput}
+                onChange={(e) => setProductUnitPriceInput(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none mb-4"
+              />
+
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Observações (opcional)
               </label>
@@ -518,7 +536,11 @@ export function OrderDetail() {
 
             <div className="border-t border-gray-200 p-6 flex gap-3">
               <button
-                onClick={() => setSelectedProduct(null)}
+                onClick={() => {
+                  setSelectedProduct(null);
+                  setProductUnitPriceInput('');
+                  setProductNotes('');
+                }}
                 className="flex-1 px-4 py-3 rounded-lg border-2 border-gray-200 hover:bg-gray-50 transition font-medium"
               >
                 Cancelar
