@@ -23,8 +23,8 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
 
   return {
-    // GitHub Pages serve this app under /restaurante-frontend/
-    base: mode === 'production' ? '/restaurante-frontend/' : '/',
+    // GitHub Pages serve this app under /r-frontend/
+    base: mode === 'production' ? '/r-frontend/' : '/',
 
     plugins: [
       figmaAssetResolver(),
