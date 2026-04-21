@@ -1,0 +1,1 @@
+{"name":"Restaurante Frontend","short_name":"Restaurante","description":"Sistema de restaurante com suporte offline por cache PWA.","start_url":"/r-frontend/","display":"standalone","background_color":"#ffffff","theme_color":"#111827","lang":"en","scope":"/r-frontend/"}
