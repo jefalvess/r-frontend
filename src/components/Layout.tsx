@@ -25,6 +25,14 @@ export function Layout() {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  const visibleNavigation = navigation.filter((item) => {
+    if (item.href === '/relatorios' && user?.role !== 'admin') {
+      return false;
+    }
+
+    return true;
+  });
+
   const handleLogout = async () => {
     await logout();
   };
@@ -58,7 +66,7 @@ export function Layout() {
           </div>
 
           <nav className="flex-1 p-4 space-y-1">
-            {navigation.map((item) => {
+            {visibleNavigation.map((item) => {
               const isActive = location.pathname === item.href;
               return (
                 <Link

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { createBrowserRouter, Outlet, useNavigate, useLocation } from 'react-router';
+import { createBrowserRouter, Navigate, Outlet, useNavigate, useLocation } from 'react-router';
 import { ProtectedRoute } from '../components/ProtectedRoute';
 import { Layout } from '../components/Layout';
+import { useAuth } from '../contexts/AuthContext';
 import { Login } from '../pages/Login';
 import { OrdersList } from '../pages/Orders/OrdersList';
 import { NewOrder } from '../pages/Orders/NewOrder';
@@ -34,6 +35,16 @@ function RootLayout() {
   }, [navigate, location.pathname, hasHandledRedirect]);
 
   return <Outlet />;
+}
+
+function AdminOnlyRoute({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+
+  if (user?.role !== 'admin') {
+    return <Navigate to="/pedidos" replace />;
+  }
+
+  return <>{children}</>;
 }
 
 export const router = createBrowserRouter(
@@ -87,7 +98,11 @@ export const router = createBrowserRouter(
             },
             {
               path: 'relatorios',
-              element: <Reports />,
+              element: (
+                <AdminOnlyRoute>
+                  <Reports />
+                </AdminOnlyRoute>
+              ),
             },
           ],
         },
