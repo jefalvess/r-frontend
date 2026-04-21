@@ -496,6 +496,27 @@ export const ordersApi = {
   },
 
   create: async (data: Omit<Order, '_id' | 'number' | 'createdAt'>): Promise<Order> => {
+    const rollbackCreatedOrder = async (orderId: string) => {
+      const deleteResponse = await fetch(`${API_BASE_URL}/orders/${orderId}`, {
+        method: 'DELETE',
+        headers: buildApiHeaders(),
+      });
+
+      if (deleteResponse.ok) {
+        return;
+      }
+
+      const cancelResponse = await fetch(`${API_BASE_URL}/orders/${orderId}/status`, {
+        method: 'PUT',
+        headers: buildApiHeaders(),
+        body: JSON.stringify({ status: 'cancelado' }),
+      });
+
+      if (!cancelResponse.ok) {
+        throw new Error('Falha ao reverter pedido após erro ao adicionar itens');
+      }
+    };
+
     const payload = {
       customerName: data.customerName,
       customerPhone: data.customerPhone,
@@ -522,18 +543,27 @@ export const ordersApi = {
       throw new Error('Pedido criado sem id');
     }
 
-    for (const item of data.items) {
-      await fetch(`${API_BASE_URL}/orders/${orderId}/items`, {
-        method: 'POST',
-        headers: buildApiHeaders(),
-        body: JSON.stringify({
-          productId: item.productId,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          notes: item.notes,
-          extras: Array.isArray(item.extras) ? item.extras.join(', ') : undefined,
-        }),
-      });
+    try {
+      for (const item of data.items) {
+        const itemResponse = await fetch(`${API_BASE_URL}/orders/${orderId}/items`, {
+          method: 'POST',
+          headers: buildApiHeaders(),
+          body: JSON.stringify({
+            productId: item.productId,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            notes: item.notes,
+            extras: Array.isArray(item.extras) ? item.extras.join(', ') : undefined,
+          }),
+        });
+
+        if (!itemResponse.ok) {
+          throw new Error('Erro ao adicionar itens ao pedido');
+        }
+      }
+    } catch (error) {
+      await rollbackCreatedOrder(orderId);
+      throw error;
     }
 
     return ordersApi.getById(orderId);
