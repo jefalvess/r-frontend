@@ -5,7 +5,8 @@ import { toast } from 'sonner';
 import { ordersApi, productsApi, categoriesApi } from '../../services/api';
 import { audioProcessingApi } from '../../services/audioProcessing';
 import { useAudioRecorder } from '../../hooks/useAudioRecorder';
-import type { OrderType, Product, Category, OrderItem } from '../../types';
+import { PrintTicket } from '../../components/PrintTicket';
+import type { OrderType, Product, Category, OrderItem, Order } from '../../types';
 
 export function NewOrder() {
   const navigate = useNavigate();
@@ -20,6 +21,8 @@ export function NewOrder() {
   const [productNotes, setProductNotes] = useState('');
   const [audioError, setAudioError] = useState<string | null>(null);
   const [isProcessingAudio, setIsProcessingAudio] = useState(false);
+  const [createdOrderToPrint, setCreatedOrderToPrint] = useState<Order | null>(null);
+  const [printCreatedOrder, setPrintCreatedOrder] = useState(false);
   const { isRecording, recordingTimeSeconds, startRecording, stopRecording } = useAudioRecorder();
   const [formData, setFormData] = useState({
     type: 'delivery' as OrderType,
@@ -195,7 +198,17 @@ export function NewOrder() {
         paid: false,
       });
 
-      navigate(`/pedidos/${order._id}`);
+      setCreatedOrderToPrint(order);
+      setPrintCreatedOrder(true);
+
+      // Aguarda renderizar o ticket antes de acionar impressão e navegar.
+      setTimeout(() => {
+        window.print();
+        setTimeout(() => {
+          setPrintCreatedOrder(false);
+          navigate(`/pedidos/${order._id}`);
+        }, 500);
+      }, 200);
     } catch (error) {
       toast.error('Erro ao criar pedido');
     } finally {
@@ -598,6 +611,12 @@ export function NewOrder() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {createdOrderToPrint && printCreatedOrder && (
+        <div>
+          <PrintTicket order={createdOrderToPrint} type="kitchen" />
         </div>
       )}
     </div>
